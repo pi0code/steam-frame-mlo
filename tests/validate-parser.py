@@ -56,11 +56,15 @@ struct ath12k_base {
         u8 dp_peer_meta_data_ver;
     } wmi_ab;
     unsigned int mode_list_updates;
+    unsigned int parse_warnings;
 };
 static const struct { size_t min_len; } ath12k_wmi_tlv_policies[1];
 
 static void ath12k_err(struct ath12k_base *ab, const char *fmt, ...) {}
-#define ath12k_warn ath12k_err
+static void ath12k_warn(struct ath12k_base *ab, const char *fmt, ...)
+{
+    ab->parse_warnings++;
+}
 #define ath12k_dbg(ab, mask, ...) ath12k_err(ab, __VA_ARGS__)
 
 static int ath12k_pull_svc_ready_ext2(struct ath12k_wmi_pdev *pdev,
@@ -93,8 +97,9 @@ int main(void)
         return 1;
 
     ret = ath12k_wmi_tlv_iter(&ab, event, len, ath12k_wmi_svc_rdy_ext2_parse, &parse);
-    printf("%d %u %u %u\n", ret, ab.wmi_ab.sbs_lower_band_end_freq,
-           (unsigned int)parse.dbs_or_sbs_cap_ext_done, ab.mode_list_updates);
+    printf("%d %u %u %u %u\n", ret, ab.wmi_ab.sbs_lower_band_end_freq,
+           (unsigned int)parse.dbs_or_sbs_cap_ext_done, ab.mode_list_updates,
+           ab.parse_warnings);
     return 0;
 }
 """
@@ -158,6 +163,9 @@ parts = [
 # This also allows the unpatched source to run the same first regression case.
 if "ath12k_wmi_tlv_dbs_sbs_caps(" in source:
     parts.append(function(source, "ath12k_wmi_tlv_dbs_sbs_caps"))
+has_caps_helper = "ath12k_wmi_dbs_sbs_caps(" in source
+if has_caps_helper:
+    parts.append(function(source, "ath12k_wmi_dbs_sbs_caps"))
 parts.extend([function(source, "ath12k_wmi_svc_rdy_ext2_parse"), main])
 
 with tempfile.TemporaryDirectory(prefix="frame-mlo-parser-") as tmp:
@@ -172,9 +180,10 @@ with tempfile.TemporaryDirectory(prefix="frame-mlo-parser-") as tmp:
         result = subprocess.run([str(binary)], input=event(records),
                                 stdout=subprocess.PIPE, check=True)
         actual = tuple(map(int, result.stdout.split()))
-        expected = (ret, cutoff, int(ret == 0), int(ret == 0))
+        expected = (ret, cutoff, int(ret == 0), int(ret == 0),
+                    int(has_caps_helper and ret != 0))
         if actual != expected:
             raise SystemExit(f"FAIL: {name}: got {actual}, expected {expected} "
-                             "(return, cutoff, array done, mode list updates)")
+                             "(return, cutoff, array done, mode list updates, warnings)")
         print(f"PASS: {name}")
     print(f"{len(cases)} parser cases passed")

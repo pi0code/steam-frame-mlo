@@ -8,6 +8,10 @@ basic connectivity, and automatic return to stock software. In this configuratio
 both the driver changes and upstream supplicant 2.12 were needed. A factory-reset
 device without the build prerequisites has not been tested.
 
+The v2 capability parser reported the expected 5900 MHz cutoff on this Frame.
+During a download, the headset’s receive counters increased on both the 5 GHz
+and 6 GHz links of the same AP.
+
 Still unvalidated:
 
 - Safe coexistence with the Steam Frame streaming dongle.
