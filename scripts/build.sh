@@ -41,7 +41,8 @@ package() {
   local name=$1 version=$2 digest=$3 destination=$4 row found_name found_version url
   local archive="$base/cache/$name.pkg.tar.zst"
   if [[ ! -f $archive ]]; then
-    row=$(pacman -Sp --print-format '%n %v %l' --nodeps "$name" 2>/dev/null) ||
+    # This is a URL lookup only. Repeating --nodeps excludes dependency targets.
+    row=$(pacman -Sp --print-format '%n %v %l' --nodeps --nodeps "$name" 2>/dev/null) ||
       die "Cannot locate $name in Frame's configured repositories."
     [[ $row != *$'\n'* ]] || die "Ambiguous package result for $name."
     read -r found_name found_version url <<< "$row"

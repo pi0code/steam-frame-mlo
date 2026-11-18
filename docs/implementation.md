@@ -33,9 +33,12 @@ new hardware-mode selection rule.
 The working research setup uses upstream
 [wpa_supplicant 2.12](https://w1.fi/releases/) with its supplied `defconfig`, which
 enables nl80211, SAE, IEEE 802.11be, and the DBus control interface needed by
-NetworkManager. Rejecting a `disable_eht` configuration option in the installed
-2.10 binary is not sufficient evidence that changing the supplicant is necessary.
-The four-way comparison in the validation record will determine that requirement.
+NetworkManager. The live comparison found that the patched driver with the
+installed 2.10 supplicant still associated on only one link; both changes together
+associated on 5 GHz and 6 GHz with both kernel links active. Conversely, upstream
+2.12 with the stock driver also used only one link. No custom supplicant patch
+is needed. See the validation record for the AP change during the comparison and
+the limits of this evidence.
 
 ## Reversal
 

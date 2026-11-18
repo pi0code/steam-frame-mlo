@@ -10,5 +10,5 @@ pahole_version=1:1.31-4
 pahole_sha256=3b1a8c5119ed4cffa1aa8fc165f3bc547e523883f9c122dc0b39ce4b5ce0d8a8
 wpa_version=2.12
 wpa_sha256=08e23937e16d0155e55cab2b51f51fbe10d80a1aa91c4e15442645059b737ef6
-# The driver/supplicant comparison must be completed before public release.
+# The live comparison required both the patched driver and upstream 2.12.
 use_new_supplicant=yes
