@@ -4,11 +4,20 @@ Experimental, reversible 5 GHz + 6 GHz multi-link operation with a Wi-Fi 7 acces
 point. Intended for using Frame directly with an AP, with the streaming dongle
 disconnected.
 
-The source build, association on both bands, short traffic tests and automatic
-return to stock have been tested on the system below. Both the driver patches and an
-upgrade to upstream supplicant 2.12 were needed. Earlier research tests also
-measured data on both AP links. Sustained VR streaming stability and a throughput
-improvement remain unproven; see [what has been tested](docs/validation.md).
+> [!WARNING]
+> **This can interfere with or break Steam Frame wireless dongle streaming while
+> enabled.** Dongle coexistence has not been validated. Keep the dongle
+> disconnected, and run `./frame-mlo off` or reboot before using it again.
+>
+> **A compatible Wi-Fi 7 access point is required**, with working **5 GHz + 6 GHz
+> MLO enabled on the network you join**. Having two bands or a Wi-Fi 7 label alone
+> does not establish compatibility. This project has been tested with UniFi
+> Express 7; other APs remain unverified. See [AP compatibility](docs/access-points.md).
+
+This is an early experiment for the specific system below. It combines driver
+patches with upstream supplicant 2.12. Long-term stability, dongle coexistence
+and performance benefits have not been established. See the short
+[validation status](docs/validation.md).
 
 ## Supported system
 
@@ -23,7 +32,7 @@ kernels before making network changes.
 | Firmware | `WLAN.IOE_HMT.1.1-00018-QCAHMTSWPL_V1.0_V2.0_SILICONZ-1` |
 | NetworkManager | 1.52.1-1.5 |
 | Installed supplicant | 2:2.10-9.3 |
-| Experimental supplicant | Unmodified upstream 2.12; required in the comparison |
+| Experimental supplicant | Unmodified upstream 2.12 |
 | AP used for testing | UniFi Express 7, MLO enabled on the 5/6 GHz network |
 
 An OS update requires a matching source/header profile and fresh testing. Do not
@@ -33,8 +42,9 @@ versions have not been validated.
 ## Setup
 
 1. Enable MLO for your AP's 5 GHz + 6 GHz Wi-Fi network, and connect Frame to it
-   normally. Keep the dongle disconnected. If you have several APs, keep Frame on
-   the same AP during testing.
+   normally. Check the [AP requirements](docs/access-points.md) first. Keep the
+   dongle disconnected. If you have several APs, keep Frame on the same AP during
+   testing.
 2. On Frame, open a terminal as `steamos`. Have a working local sudo password and
    keep the device awake. SSH is useful for setup, but run activation from Frame's
    console so a Wi-Fi interruption does not strand you.
@@ -93,10 +103,6 @@ whether the kernel advertises MLO, and the number of links listed by the kernel.
 Its output omits SSID, MAC and IP addresses. Two associated links alone do not prove that both
 carry data. Use AP per-link data packet counters during traffic to verify that.
 
-An idle secondary link can show a very low RSSI in the AP UI. In this setup its
-reported RSSI became normal when traffic woke the link. Check counters and RSSI
-under load before treating an idle reading as an antenna problem.
-
 For a failed switch, run `./frame-mlo off`; if restoration reports an error,
 reboot. Local service logs can help:
 
@@ -111,10 +117,10 @@ remove this setup, restore stock first, then remove `~/frame-mlo` and
 ## What changes
 
 Two small ath12k patches expose MLO behind an opt-in module parameter and fix
-parsing of the firmware's dual-radio capability record. Both the driver changes
-and an upgrade to upstream supplicant 2.12 were needed in the live comparison. See
+parsing of the firmware's dual-radio capability record. The setup also builds
+upstream supplicant 2.12. See
 [the implementation notes](docs/implementation.md) and the
-[validation record](docs/validation.md).
+[validation status](docs/validation.md).
 
 Scripts and documentation are MIT licensed. The patches use the licenses of the
 upstream files they modify. Downloaded kernel and supplicant source retain their

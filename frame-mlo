@@ -17,6 +17,9 @@ case ${1:-status} in
     [[ -f $base/artifacts.sha256 ]] || {
       echo 'Run ./frame-mlo setup from the repository first.' >&2; exit 1;
     }
+    echo 'WARNING: Experimental MLO can interfere with or break wireless dongle streaming.'
+    echo 'Keep the dongle disconnected. Use ./frame-mlo off or reboot before using it again.'
+    echo 'Requires a compatible Wi-Fi 7 AP with 5 GHz + 6 GHz MLO enabled for this network.'
     echo 'Starting experimental AP-only MLO. Wi-Fi will reconnect; keep Frame awake.'
     echo 'Use ./frame-mlo status after reconnecting. Use ./frame-mlo off to restore stock.'
     sudo systemd-run --unit=steam-frame-mlo-apply --collect \
