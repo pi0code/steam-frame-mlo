@@ -3,6 +3,7 @@ set -Eeuo pipefail
 base=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source "$base/lib/profile.sh"
 state=/run/steam-frame-mlo
+scan_mask=/sys/module/cfg80211/parameters/cfg80211_block_scans
 lockfile=/run/steam-frame-mlo.lock
 dropin=/run/systemd/system/wpa_supplicant.service.d/90-steam-frame-mlo.conf
 die() { echo "$*" >&2; exit 1; }
@@ -20,6 +21,9 @@ restore() {
   modprobe ath12k || failed=1
   modprobe ath12k_wifi7 || failed=1
   [[ ! -e /sys/module/ath12k/parameters/experimental_mlo ]] || failed=1
+  if [[ -f $state/scan-mask ]]; then
+    cat "$state/scan-mask" > "$scan_mask" || failed=1
+  fi
   systemctl start wpa_supplicant.service NetworkManager.service || failed=1
   if [[ -f $state/softap-was-active ]]; then
     systemctl start softapmanager.service || failed=1
@@ -67,11 +71,14 @@ activate() {
   (( watchdog > 0 )) || watchdog=3
   systemd-run --unit=steam-frame-mlo-rollback --collect --on-active="${watchdog}min" \
     --timer-property=AccuracySec=1s /bin/bash "$base/lib/runtime.sh" off
+  cat "$scan_mask" > "$state/scan-mask.tmp"
+  mv "$state/scan-mask.tmp" "$state/scan-mask"
   systemctl stop softapmanager.service NetworkManager.service wpa_supplicant.service
   modprobe -r ath12k_wifi7
   modprobe -r ath12k
   insmod "$base/bin/ath12k.ko" experimental_mlo=1
   modprobe ath12k_wifi7
+  echo 0 > "$scan_mask"
   if [[ $use_new_supplicant == yes ]]; then
     mkdir -p "${dropin%/*}"
     cat > "$dropin" <<UNIT

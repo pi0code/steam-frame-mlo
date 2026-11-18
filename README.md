@@ -1,10 +1,15 @@
 # Steam Frame MLO
 
-Experimental, reversible 5 GHz + 6 GHz multi-link operation with a Wi-Fi 7 access
+Experimental 5 GHz + 6 GHz multi-link operation with a Wi-Fi 7 access
 point. Intended for using Frame directly with an AP, with the streaming dongle
 disconnected.
 
 > [!WARNING]
+> **Risk of bricking your Frame.** Activation loads an experimental kernel driver
+> as root. A failure could crash the headset, cut off Wi-Fi and SSH, or leave it
+> unusable until you recover SteamOS. Back up important data and make sure you
+> can access local recovery before trying this. A timer cannot recover a hung kernel.
+>
 > **This can interfere with or break Steam Frame wireless dongle streaming while
 > enabled.** Dongle coexistence has not been validated. Keep the dongle
 > disconnected, and run `./frame-mlo off` or reboot before using it again.
@@ -93,14 +98,16 @@ first.
 
 The helper loads a module from your home directory and temporarily selects the
 built supplicant using a service override under `/run`. Installed OS files remain in
-place. **Rebooting returns to stock software.** There is no automatic activation
+place. A normal reboot loads the installed stock software. There is no automatic activation
 at boot.
 
 ## Check the result
 
 `./frame-mlo status` prints the supplicant version selected by the service,
 whether the kernel advertises MLO, and the number of links listed by the kernel.
-Its output omits SSID, MAC and IP addresses. Two associated links alone do not prove that both
+Its output omits SSID, MAC and IP addresses. During activation the helper saves the SteamOS scan-block setting and clears it
+so Frame can discover both bands. Turning MLO off restores the saved setting.
+Two associated links alone do not prove that both
 carry data. Use AP per-link data packet counters during traffic to verify that.
 
 For a failed switch, run `./frame-mlo off`; if restoration reports an error,

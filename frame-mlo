@@ -17,7 +17,9 @@ case ${1:-status} in
     [[ -f $base/artifacts.sha256 ]] || {
       echo 'Run ./frame-mlo setup from the repository first.' >&2; exit 1;
     }
-    echo 'WARNING: Experimental MLO can interfere with or break wireless dongle streaming.'
+    echo 'WARNING: This experimental kernel driver could brick your Frame or require SteamOS recovery.'
+    echo 'Back up important data and have a local recovery method before enabling it.'
+    echo 'Experimental MLO can interfere with or break wireless dongle streaming.'
     echo 'Keep the dongle disconnected. Use ./frame-mlo off or reboot before using it again.'
     echo 'Requires a compatible Wi-Fi 7 AP with 5 GHz + 6 GHz MLO enabled for this network.'
     echo 'Starting experimental AP-only MLO. Wi-Fi will reconnect; keep Frame awake.'

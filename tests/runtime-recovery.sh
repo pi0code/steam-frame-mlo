@@ -7,6 +7,8 @@ trap 'rm -rf -- "$scratch"' EXIT
 source "$repo/lib/runtime.sh"
 state="$scratch/state"
 dropin="$scratch/service/90-steam-frame-mlo.conf"
+scan_mask="$scratch/scan-mask"
+echo 5 > "$scan_mask"
 calls="$scratch/calls"
 failure=
 systemctl() {
@@ -74,6 +76,7 @@ sleep() { :; }
 
 : > "$calls"
 activate 30 > "$scratch/output"
+[[ $(cat "$scan_mask") == 0 ]]
 [[ -f $state/active && -f $dropin ]]
 awk '
   /^systemd-run / { armed=1 }
@@ -83,6 +86,7 @@ awk '
 echo 'PASS: rollback is armed before network services stop'
 restore > "$scratch/output"
 
+[[ $(cat "$scan_mask") == 5 ]]
 failure=insmod
 : > "$calls"
 set +e

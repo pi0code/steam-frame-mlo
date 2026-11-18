@@ -10,7 +10,9 @@ device without the build prerequisites has not been tested.
 
 The v2 capability parser reported the expected 5900 MHz cutoff on this Frame.
 During a download, the headset’s receive counters increased on both the 5 GHz
-and 6 GHz links of the same AP.
+and 6 GHz links of the same AP. During a two-minute Alyx stream, Frame reported
+both links in all 24 samples after the 5 GHz scan block was cleared. Short
+single-band comparison runs did not establish a consistent MLO performance gain.
 
 Still unvalidated:
 
