@@ -1,0 +1,120 @@
+# Steam Frame MLO
+
+Experimental, reversible 5 GHz + 6 GHz multi-link operation with a Wi-Fi 7 access
+point. Intended for using Frame directly with an AP, with the streaming dongle
+disconnected.
+
+**Private development draft. The driver/supplicant comparison and this new setup
+workflow still need live validation. Do not publish as a tested installer yet.**
+
+The working research setup has associated on both bands and carried data on both
+links. The new setup in this repository is being checked independently. MLO does
+not guarantee higher throughput or reliable VR streaming; see
+[what has been tested](docs/validation.md).
+
+## Supported system
+
+This initial version deliberately accepts one tested kernel. It refuses other
+kernels before making network changes.
+
+| Component | Tested version |
+| --- | --- |
+| Device | Steam Frame, WCN7850 / FastConnect 7800 |
+| SteamOS | 0.5.9, build 20261113.6134720 |
+| Kernel | `7.2.0-g344f27110f05`, aarch64 |
+| Firmware | `WLAN.IOE_HMT.1.1-00018-QCAHMTSWPL_V1.0_V2.0_SILICONZ-1` |
+| NetworkManager | 1.52.1-1.5 |
+| Installed supplicant | 2:2.10-9.3 |
+| Experimental supplicant | Upstream 2.12; necessity still being checked |
+| AP used for testing | UniFi Express 7, MLO enabled on the 5/6 GHz network |
+
+An OS update requires a matching source/header profile and fresh testing. Do not
+change the kernel string just to bypass the check. Other APs and firmware
+versions have not been validated.
+
+## Setup
+
+1. Enable MLO for your AP's 5 GHz + 6 GHz Wi-Fi network, and connect Frame to it
+   normally. Keep the dongle disconnected. If you have several APs, keep Frame on
+   the same AP during testing.
+2. On Frame, open a terminal as `steamos`. Have a working local sudo password and
+   keep the device awake. SSH is useful for setup, but run activation from Frame's
+   console so a Wi-Fi interruption does not strand you.
+3. Clone this repository and build:
+
+   ```sh
+   git clone https://github.com/pi0code/steam-frame-mlo.git
+   cd steam-frame-mlo
+   ./frame-mlo setup
+   ```
+
+Setup downloads pinned source and packages, verifies archive hashes, and builds
+locally. It does not install system packages, disable SteamOS read-only mode, or
+activate MLO. It needs the compiler and development libraries present in the
+supported SteamOS build, plus access to Frame's configured package repositories.
+If the exact packages are no longer available, setup stops. Private repository
+URLs are never part of this repository or normal setup output.
+
+Builds and downloaded archives live in `~/.local/share/steam-frame-mlo`. A short
+helper is installed at `~/frame-mlo`. Keep that data directory until you have
+turned the experiment off.
+
+## Turn it on or off
+
+From Frame's home directory:
+
+```sh
+./frame-mlo on       # restores stock automatically after 30 minutes
+./frame-mlo status
+./frame-mlo off      # restore stock now
+```
+
+Each switch briefly interrupts Wi-Fi. The helper uses a detached system service
+so the switch can finish after SSH disconnects. Starting the service is not proof
+that activation succeeded: reconnect and check `status`.
+
+Use `./frame-mlo on 10` for a ten-minute trial. Once you have checked recovery,
+`./frame-mlo on 0` disables the session timer; a startup watchdog still protects
+the initial switch. Turn it off before starting a new session. Existing MLO
+experiments or supplicant service overrides must be removed by their own helper
+first.
+
+The helper loads a module from your home directory and, if required, temporarily
+overrides the supplicant executable under `/run`. Installed OS files remain in
+place. **Rebooting returns to stock software.** There is no automatic activation
+at boot.
+
+## Check the result
+
+`./frame-mlo status` prints the running supplicant version, whether the kernel
+advertises MLO, and the number of links listed by the kernel. Its output omits
+SSID, MAC and IP addresses. Two associated links alone do not prove that both
+carry data. Use AP per-link data packet counters during traffic to verify that.
+
+An idle secondary link can show a very low RSSI in the AP UI. In this setup its
+reported RSSI became normal when traffic woke the link. Check counters and RSSI
+under load before treating an idle reading as an antenna problem.
+
+For a failed switch, run `./frame-mlo off`; if restoration reports an error,
+reboot. Local service logs can help:
+
+```sh
+sudo journalctl -b -u steam-frame-mlo-apply -u steam-frame-mlo-off
+```
+
+System logs may contain network identifiers. Review them before sharing. To
+remove this setup, restore stock first, then remove `~/frame-mlo` and
+`~/.local/share/steam-frame-mlo`.
+
+## What changes
+
+Two small ath12k patches expose MLO behind an opt-in module parameter and fix
+parsing of the firmware's dual-radio capability record. The supplicant experiment
+tests whether Frame's installed version can use those capabilities. See
+[the implementation notes](docs/implementation.md) and the
+[validation record](docs/validation.md).
+
+Scripts and documentation are MIT licensed. The patches use the licenses of the
+upstream files they modify. Downloaded kernel and supplicant source retain their
+own licenses; this repository does not distribute firmware, OS packages, or
+prebuilt modules.

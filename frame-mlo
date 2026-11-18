@@ -1,0 +1,40 @@
+#!/bin/bash
+set -euo pipefail
+base=/home/steamos/.local/share/steam-frame-mlo
+repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+case ${1:-status} in
+  setup)
+    [[ -f $repo/scripts/build.sh ]] || {
+      echo 'Run setup from the downloaded repository.' >&2; exit 1;
+    }
+    exec /bin/bash "$repo/scripts/build.sh"
+    ;;
+  on)
+    minutes=${2:-30}
+    [[ $minutes =~ ^[0-9]{1,4}$ ]] || {
+      echo 'Use a number of minutes (default 30; 0 disables the timer).' >&2; exit 2;
+    }
+    [[ -f $base/artifacts.sha256 ]] || {
+      echo 'Run ./frame-mlo setup from the repository first.' >&2; exit 1;
+    }
+    echo 'Starting experimental AP-only MLO. Wi-Fi will reconnect; keep Frame awake.'
+    echo 'Use ./frame-mlo status after reconnecting. Use ./frame-mlo off to restore stock.'
+    sudo systemd-run --unit=steam-frame-mlo-apply --collect \
+      --property=Type=exec --property=RuntimeMaxSec=120 \
+      /bin/bash "$base/lib/runtime.sh" on "$minutes"
+    ;;
+  off)
+    [[ -f $base/lib/runtime.sh ]] || { echo 'No setup found.' >&2; exit 1; }
+    echo 'Restoring stock Wi-Fi. The connection will briefly disconnect.'
+    sudo systemd-run --unit=steam-frame-mlo-off --collect --property=Type=exec \
+      /bin/bash "$base/lib/runtime.sh" off
+    ;;
+  status)
+    [[ -f $base/lib/status.sh ]] || { echo 'Not set up. See the README.'; exit 1; }
+    exec /bin/bash "$base/lib/status.sh"
+    ;;
+  *)
+    echo 'Usage: ./frame-mlo setup | on [minutes] | off | status' >&2
+    exit 2
+    ;;
+esac

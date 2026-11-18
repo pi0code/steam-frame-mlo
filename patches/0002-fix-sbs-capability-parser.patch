@@ -1,0 +1,59 @@
+diff --git a/drivers/net/wireless/ath/ath12k/wmi.c b/drivers/net/wireless/ath/ath12k/wmi.c
+index 75b259990..f43c9a359 100644
+--- a/drivers/net/wireless/ath/ath12k/wmi.c
++++ b/drivers/net/wireless/ath/ath12k/wmi.c
+@@ -5781,11 +5781,25 @@ static int ath12k_wmi_update_hw_mode_list(struct ath12k_base *ab)
+ 	return 0;
+ }
+ 
++static int ath12k_wmi_tlv_dbs_sbs_caps(struct ath12k_base *ab, u16 tag,
++				       u16 len, const void *ptr, void *data)
++{
++	const struct ath12k_wmi_dbs_or_sbs_cap_params **first = data;
++
++	if (tag != WMI_TAG_DBS_OR_SBS_CAP_EXT || len < sizeof(**first))
++		return -EPROTO;
++
++	if (!*first)
++		*first = ptr;
++
++	return 0;
++}
++
+ static int ath12k_wmi_svc_rdy_ext2_parse(struct ath12k_base *ab,
+ 					 u16 tag, u16 len,
+ 					 const void *ptr, void *data)
+ {
+-	const struct ath12k_wmi_dbs_or_sbs_cap_params *dbs_or_sbs_caps;
++	const struct ath12k_wmi_dbs_or_sbs_cap_params *caps = NULL;
+ 	struct ath12k_wmi_pdev *wmi_handle = &ab->wmi_ab.wmi[0];
+ 	struct ath12k_wmi_svc_rdy_ext2_parse *parse = data;
+ 	int ret;
+@@ -5840,9 +5854,13 @@ static int ath12k_wmi_svc_rdy_ext2_parse(struct ath12k_base *ab,
+ 		} else if (!parse->htt_msdu_idx_to_qtype_map_done) {
+ 			parse->htt_msdu_idx_to_qtype_map_done = true;
+ 		} else if (!parse->dbs_or_sbs_cap_ext_done) {
+-			dbs_or_sbs_caps = ptr;
++			ret = ath12k_wmi_tlv_iter(ab, ptr, len,
++						  ath12k_wmi_tlv_dbs_sbs_caps, &caps);
++			if (ret)
++				return ret;
++
+ 			ab->wmi_ab.sbs_lower_band_end_freq =
+-				__le32_to_cpu(dbs_or_sbs_caps->sbs_lower_band_end_freq);
++				caps ? le32_to_cpu(caps->sbs_lower_band_end_freq) : 0;
+ 
+ 			ath12k_dbg(ab, ATH12K_DBG_WMI, "sbs_lower_band_end_freq %u\n",
+ 				   ab->wmi_ab.sbs_lower_band_end_freq);
+diff --git a/drivers/net/wireless/ath/ath12k/wmi.h b/drivers/net/wireless/ath/ath12k/wmi.h
+index b508aa759..94bb6854b 100644
+--- a/drivers/net/wireless/ath/ath12k/wmi.h
++++ b/drivers/net/wireless/ath/ath12k/wmi.h
+@@ -2032,6 +2032,7 @@ enum wmi_tlv_tag {
+ 	WMI_TAG_PDEV_SET_BIOS_SAR_TABLE_CMD = 0x3D8,
+ 	WMI_TAG_PDEV_SET_BIOS_GEO_TABLE_CMD = 0x3D9,
+ 	WMI_TAG_PDEV_SET_BIOS_INTERFACE_CMD = 0x3FB,
++	WMI_TAG_DBS_OR_SBS_CAP_EXT = 0x400,
+ 	WMI_TAG_RSSI_DBM_CONVERSION_PARAMS_INFO_FIXED_PARAM = 0x427,
+ 	WMI_TAG_RSSI_DBM_CONVERSION_PARAMS_INFO,
+ 	WMI_TAG_RSSI_DBM_CONVERSION_TEMP_OFFSET_INFO,

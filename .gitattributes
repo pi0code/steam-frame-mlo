@@ -1,0 +1,3 @@
+# Unified diff context intentionally includes leading spaces and empty lines.
+# Check whitespace on the resulting source with `git diff --check` after apply.
+*.patch -whitespace

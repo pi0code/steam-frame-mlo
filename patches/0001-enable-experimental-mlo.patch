@@ -1,0 +1,43 @@
+--- a/drivers/net/wireless/ath/ath12k/mac.c
++++ b/drivers/net/wireless/ath/ath12k/mac.c
+@@ -7,6 +7,7 @@
+ #include <net/mac80211.h>
+ #include <net/cfg80211.h>
+ #include <linux/etherdevice.h>
++#include <linux/module.h>
+ 
+ #include "mac.h"
+ #include "core.h"
+@@ -23,6 +24,12 @@
+ #include "debugfs_sta.h"
+ #include "dp.h"
+ #include "dp_cmn.h"
++
++/* Opt-in experiment; preserve Valve's default MLO policy. */
++static bool ath12k_experimental_mlo;
++module_param_named(experimental_mlo, ath12k_experimental_mlo, bool, 0444);
++MODULE_PARM_DESC(experimental_mlo,
++		 "Expose firmware-supported MLO (experimental; default disabled)");
+ 
+ #define CHAN2G(_channel, _freq, _flags) { \
+ 	.band                   = NL80211_BAND_2GHZ, \
+@@ -15265,18 +15272,16 @@
+ 	 */
+ 	wiphy->flags |= WIPHY_FLAG_DISABLE_WEXT;
+ 
+-#if 0 // hide MLO from mac80211 but still allow firmware setup
+ 	/* Copy over MLO related capabilities received from
+ 	 * WMI_SERVICE_READY_EXT2_EVENT if single_chip_mlo_supp is set.
+ 	 */
+-	if (ab->ag->mlo_capable) {
++	if (ath12k_experimental_mlo && ab->ag->mlo_capable) {
+ 		ath12k_iftypes_ext_capa[2].eml_capabilities = cap->eml_cap;
+ 		ath12k_iftypes_ext_capa[2].mld_capa_and_ops = cap->mld_cap;
+ 		wiphy->flags |= WIPHY_FLAG_SUPPORTS_MLO;
+ 
+ 		ieee80211_hw_set(hw, MLO_MCAST_MULTI_LINK_TX);
+ 	}
+-#endif
+ 
+ 	hw->queues = ATH12K_HW_MAX_QUEUES;
+ 	wiphy->tx_queue_len = ATH12K_QUEUE_LEN;

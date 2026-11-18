@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.log
+*.eml
+*.ko
+*.pkg.tar.*
+results/raw/
