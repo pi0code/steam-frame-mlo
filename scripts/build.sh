@@ -8,8 +8,8 @@ die() { echo "$*" >&2; exit 1; }
 
 [[ $(id -un) == steamos && $HOME == /home/steamos && $(uname -m) == aarch64 ]] ||
   die 'Run setup as steamos on Steam Frame, without sudo.'
-[[ $(uname -r) == "$expected_kernel" ]] ||
-  die "This release requires kernel $expected_kernel; no changes made."
+expected_kernel=$(uname -r)
+select_kernel_profile "$expected_kernel" || die "Unsupported kernel: $expected_kernel"
 [[ ! -e /sys/module/ath12k/parameters/experimental_mlo ]] ||
   die 'Restore stock Wi-Fi before building or updating this experiment.'
 [[ ! -d /run/steam-frame-mlo ]] || die 'Run ./frame-mlo off before setup.'
@@ -39,7 +39,11 @@ download() {
 }
 package() {
   local name=$1 version=$2 digest=$3 destination=$4 row found_name found_version url
-  local archive="$base/cache/$name.pkg.tar.zst"
+  local archive="$base/cache/$name-$version.pkg.tar.zst" legacy="$base/cache/$name.pkg.tar.zst"
+  # Older releases cached packages by name alone. Reuse a verified match.
+  if [[ ! -f $archive && -f $legacy ]] && matches "$legacy" "$digest"; then
+    archive=$legacy
+  fi
   if [[ ! -f $archive ]]; then
     # This is a URL lookup only. Repeating --nodeps excludes dependency targets.
     row=$(pacman -Sp --print-format '%n %v %l' --nodeps --nodeps "$name" 2>/dev/null) ||
@@ -100,7 +104,10 @@ fi
 # shellcheck disable=SC2046
 gcc -Wall -Wextra -o "$work/artifacts/bin/query-mlo" "$repo/scripts/query-mlo.c" \
   $(pkg-config --cflags --libs libnl-3.0 libnl-genl-3.0)
-install -m644 "$repo/lib/"*.sh "$work/artifacts/lib/"
+install -m644 "$repo/lib/runtime.sh" "$repo/lib/status.sh" "$work/artifacts/lib/"
+# The installed helper must check the kernel this module was built for.
+printf 'expected_kernel=%q\nuse_new_supplicant=%q\n' "$expected_kernel" "$use_new_supplicant" \
+  > "$work/artifacts/lib/profile.sh"
 (
   cd "$work/artifacts"
   sha256sum bin/* lib/* > artifacts.sha256

@@ -1,14 +1,25 @@
 #!/bin/bash
-# Tested SteamOS profile. A different kernel needs a new build and validation.
-expected_kernel=7.2.0-g344f27110f05
-source_commit=344f27110f059d0520c9dbbafc503d4bbc6c1f68
 source_url=https://github.com/evlaV/deckard-linux-no-oopsies.git
 headers_package=linux-72-deckard-headers
-headers_version=7.2.0+g344f27110f05-1
-headers_sha256=56b3f7a22f4a656bdfcd3ad6adbe88f9b85544650d12aabb69aee30d96ae752c
 pahole_version=1:1.31-4
 pahole_sha256=3b1a8c5119ed4cffa1aa8fc165f3bc547e523883f9c122dc0b39ce4b5ce0d8a8
 wpa_version=2.12
 wpa_sha256=08e23937e16d0155e55cab2b51f51fbe10d80a1aa91c4e15442645059b737ef6
 # The live comparison required both the patched driver and upstream 2.12.
 use_new_supplicant=yes
+
+select_kernel_profile() {
+  case $1 in
+    7.2.0-g344f27110f05)
+      source_commit=344f27110f059d0520c9dbbafc503d4bbc6c1f68
+      headers_version=7.2.0+g344f27110f05-1
+      headers_sha256=56b3f7a22f4a656bdfcd3ad6adbe88f9b85544650d12aabb69aee30d96ae752c
+      ;;
+    7.2.0-g04c7e99cb73a)
+      source_commit=04c7e99cb73abbc859df2f2166f28c4dc2a50c40
+      headers_version=7.2.0+g04c7e99cb73a-1
+      headers_sha256=e70e20c0293cecd42f74a84fe741fbd394f0b05a5c92ef86a7298875854bf52f
+      ;;
+    *) return 1 ;;
+  esac
+}

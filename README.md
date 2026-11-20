@@ -26,23 +26,25 @@ and performance benefits have not been established. See the short
 
 ## Supported system
 
-This initial version deliberately accepts one tested kernel. It refuses other
-kernels before making network changes.
+Setup builds the v3 capability parser for either of these aarch64 kernels.
+
+| SteamOS | Build | Kernel | V3 validation |
+| --- | --- | --- | --- |
+| 0.5.10 | 20261118.6185655 | `7.2.0-g04c7e99cb73a` | Tested on Frame with both bands |
+| 0.5.9 | 20261113.6134720 | `7.2.0-g344f27110f05` | Module build and parser tests. The live test on this OS used v2. |
 
 | Component | Tested version |
 | --- | --- |
 | Device | Steam Frame, WCN7850 / FastConnect 7800 |
-| SteamOS | 0.5.9, build 20261113.6134720 |
-| Kernel | `7.2.0-g344f27110f05`, aarch64 |
 | Firmware | `WLAN.IOE_HMT.1.1-00018-QCAHMTSWPL_V1.0_V2.0_SILICONZ-1` |
 | NetworkManager | 1.52.1-1.5 |
 | Installed supplicant | 2:2.10-9.3 |
 | Experimental supplicant | Unmodified upstream 2.12 |
 | AP used for testing | UniFi Express 7, MLO enabled on the 5/6 GHz network |
 
-An OS update requires a matching source/header profile and fresh testing. Do not
-change the kernel string just to bypass the check. Other APs and firmware
-versions have not been validated.
+After an update to a supported kernel, return to stock Wi-Fi, run
+`git pull --ff-only` in the cloned repository, then run `./frame-mlo setup` there
+to rebuild. The installed helper checks that its module matches the running kernel.
 
 ## Setup
 
@@ -107,8 +109,8 @@ at boot.
 whether the kernel advertises MLO, and the number of links listed by the kernel.
 Its output omits SSID, MAC and IP addresses. During activation the helper saves the SteamOS scan-block setting and clears it
 so Frame can discover both bands. Turning MLO off restores the saved setting.
-Two associated links alone do not prove that both
-carry data. Use AP per-link data packet counters during traffic to verify that.
+To check that traffic reaches both links, compare AP per-link data counters or
+Frame's per-link receive counters before and after a download.
 
 For a failed switch, run `./frame-mlo off`; if restoration reports an error,
 reboot. Local service logs can help:

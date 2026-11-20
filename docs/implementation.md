@@ -1,7 +1,7 @@
 # Implementation
 
-The build starts at Valve kernel source commit
-[`344f27110f059d0520c9dbbafc503d4bbc6c1f68`](https://github.com/evlaV/deckard-linux-no-oopsies/tree/344f27110f059d0520c9dbbafc503d4bbc6c1f68).
+Setup selects the pinned Valve source and headers for the running kernel.
+Both profiles use the same two patches. See [kernel profiles](../lib/profile.sh).
 
 ## Driver policy
 
@@ -21,12 +21,11 @@ wrong word as the band boundary. On the tested firmware this produced 5 rather
 than 5900 MHz. That causes the driver's radio mapping to treat the 5 GHz and
 6 GHz links as sharing a radio, leading to partner-link deactivation.
 
-Patch 2 walks the nested TLVs with the existing WMI iterator, validates each tag
-and minimum size, and reads the first capability record after validation. An
-empty array yields zero. A malformed record fails without committing a partial
-capability update. The patch preserves a first record whose cutoff is zero and
-accepts extended records. It does not add a firmware-specific cutoff or invent a
-new hardware-mode selection rule.
+The firmware describes one DBS/SBS capability inside the array. Patch 2 clears
+the cached cutoff and uses the WMI iterator to reach that capability's payload.
+The callback checks the tag and minimum length, then reads the little-endian
+cutoff. An empty array leaves the cutoff at zero. A malformed record returns
+an error before the driver updates the radio mapping.
 
 ## Supplicant
 

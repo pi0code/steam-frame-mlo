@@ -4,10 +4,10 @@ This repository supplies source patches and scripts that build on Frame. It does
 not supply a prebuilt kernel module or supplicant. `./frame-mlo setup` starts from
 the installed Wi-Fi stack and leaves it running until you explicitly turn MLO on.
 
-The validated setup used SteamOS 0.5.9 with kernel `7.2.0-g344f27110f05`. Build
-tools were already installed on the test device before the setup test.
-Starting with stock Wi-Fi software has been tested; starting with a factory-reset
-OS without those tools has not.
+The setup was exercised with stock Wi-Fi and existing development tools.
+On SteamOS 0.5.10 the installer was also run in an isolated home directory
+with an older header archive in its cache. See [supported kernels](../README.md#supported-system)
+for the build and hardware coverage of each version.
 
 ## Existing prerequisites
 
@@ -36,8 +36,8 @@ release does not provide a toolchain bootstrap procedure.
 
 ## What setup downloads
 
-- The exact Valve kernel source commit in `lib/profile.sh`, then applies the two
-  patches under `patches/`.
+- The Valve kernel source commit pinned for the running kernel in
+  `lib/profile.sh`. Both profiles apply the two patches under `patches/`.
 - The matching kernel header package and pahole build tool, from Frame's own
   configured package repositories. Both have pinned versions and archive hashes.
   They are extracted into the build directory, not installed into the OS.

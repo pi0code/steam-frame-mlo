@@ -8,11 +8,14 @@ basic connectivity, and automatic return to stock software. In this configuratio
 both the driver changes and upstream supplicant 2.12 were needed. A factory-reset
 device without the build prerequisites has not been tested.
 
-The v2 capability parser reported the expected 5900 MHz cutoff on this Frame.
-During a download, the headset’s receive counters increased on both the 5 GHz
-and 6 GHz links of the same AP. During a two-minute Alyx stream, Frame reported
-both links in all 24 samples after the 5 GHz scan block was cleared. Short
-single-band comparison runs did not establish a consistent MLO performance gain.
+On SteamOS 0.5.10, two v3 loads reported a 5900 MHz cutoff. After each
+return to stock, the installed driver reported 5 MHz on the same firmware
+and Wi-Fi reconnected. The loaded v3 module's build ID matched the test
+artifact. During a 12-second LAN download, Frame's receive counters rose
+on both 5260 MHz and 6295 MHz links of the same AP.
+
+On SteamOS 0.5.9, v3 was built against the matching headers and passed
+the parser tests. Live dual-band traffic on that OS was tested with v2.
 
 Still unvalidated:
 

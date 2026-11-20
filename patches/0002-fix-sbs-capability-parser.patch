@@ -1,41 +1,21 @@
 diff --git a/drivers/net/wireless/ath/ath12k/wmi.c b/drivers/net/wireless/ath/ath12k/wmi.c
-index 75b259990..0cf6e1eab 100644
+index 75b259990c..9b1de1ec06 100644
 --- a/drivers/net/wireless/ath/ath12k/wmi.c
 +++ b/drivers/net/wireless/ath/ath12k/wmi.c
-@@ -5781,11 +5781,47 @@ static int ath12k_wmi_update_hw_mode_list(struct ath12k_base *ab)
+@@ -5781,11 +5781,27 @@ static int ath12k_wmi_update_hw_mode_list(struct ath12k_base *ab)
  	return 0;
  }
  
 +static int ath12k_wmi_tlv_dbs_sbs_caps(struct ath12k_base *ab, u16 tag,
 +				       u16 len, const void *ptr, void *data)
 +{
-+	const struct ath12k_wmi_dbs_or_sbs_cap_params **first = data;
++	const struct ath12k_wmi_dbs_or_sbs_cap_params *caps = ptr;
 +
-+	if (tag != WMI_TAG_DBS_OR_SBS_CAP_EXT || len < sizeof(**first))
++	if (tag != WMI_TAG_DBS_OR_SBS_CAP_EXT || len < sizeof(*caps))
 +		return -EPROTO;
 +
-+	if (!*first)
-+		*first = ptr;
-+
-+	return 0;
-+}
-+
-+static int ath12k_wmi_dbs_sbs_caps(struct ath12k_base *ab, u16 len,
-+				   const void *ptr)
-+{
-+	const struct ath12k_wmi_dbs_or_sbs_cap_params *caps = NULL;
-+	int ret;
-+
-+	ret = ath12k_wmi_tlv_iter(ab, ptr, len,
-+				  ath12k_wmi_tlv_dbs_sbs_caps, &caps);
-+	if (ret) {
-+		ath12k_warn(ab, "failed to parse DBS/SBS capabilities WMI TLV: %d\n",
-+			    ret);
-+		return ret;
-+	}
-+
 +	ab->wmi_ab.sbs_lower_band_end_freq =
-+		caps ? le32_to_cpu(caps->sbs_lower_band_end_freq) : 0;
++		le32_to_cpu(caps->sbs_lower_band_end_freq);
 +
 +	ath12k_dbg(ab, ATH12K_DBG_WMI, "sbs_lower_band_end_freq %u\n",
 +		   ab->wmi_ab.sbs_lower_band_end_freq);
@@ -51,7 +31,7 @@ index 75b259990..0cf6e1eab 100644
  	struct ath12k_wmi_pdev *wmi_handle = &ab->wmi_ab.wmi[0];
  	struct ath12k_wmi_svc_rdy_ext2_parse *parse = data;
  	int ret;
-@@ -5840,12 +5876,9 @@ static int ath12k_wmi_svc_rdy_ext2_parse(struct ath12k_base *ab,
+@@ -5840,12 +5856,14 @@ static int ath12k_wmi_svc_rdy_ext2_parse(struct ath12k_base *ab,
  		} else if (!parse->htt_msdu_idx_to_qtype_map_done) {
  			parse->htt_msdu_idx_to_qtype_map_done = true;
  		} else if (!parse->dbs_or_sbs_cap_ext_done) {
@@ -61,14 +41,19 @@ index 75b259990..0cf6e1eab 100644
 -
 -			ath12k_dbg(ab, ATH12K_DBG_WMI, "sbs_lower_band_end_freq %u\n",
 -				   ab->wmi_ab.sbs_lower_band_end_freq);
-+			ret = ath12k_wmi_dbs_sbs_caps(ab, len, ptr);
-+			if (ret)
++			ab->wmi_ab.sbs_lower_band_end_freq = 0;
++			ret = ath12k_wmi_tlv_iter(ab, ptr, len,
++						  ath12k_wmi_tlv_dbs_sbs_caps, NULL);
++			if (ret) {
++				ath12k_warn(ab, "failed to parse DBS/SBS capabilities WMI TLV: %d\n",
++					    ret);
 +				return ret;
++			}
  
  			ret = ath12k_wmi_update_hw_mode_list(ab);
  			if (ret) {
 diff --git a/drivers/net/wireless/ath/ath12k/wmi.h b/drivers/net/wireless/ath/ath12k/wmi.h
-index b508aa759..94bb6854b 100644
+index b508aa759b..94bb6854b0 100644
 --- a/drivers/net/wireless/ath/ath12k/wmi.h
 +++ b/drivers/net/wireless/ath/ath12k/wmi.h
 @@ -2032,6 +2032,7 @@ enum wmi_tlv_tag {

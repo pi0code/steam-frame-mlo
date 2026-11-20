@@ -41,4 +41,4 @@ if systemctl is-active --quiet steam-frame-mlo-rollback.timer; then
 else
   echo 'Automatic rollback: not armed'
 fi
-echo 'Listed links confirm association; AP per-link traffic counters are needed to check data use.'
+echo 'To check traffic on both links, compare AP data counters or Frame receive counters per link during a download.'
